@@ -26,7 +26,7 @@ function ContestResults() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/contests/results/${contestId}`)
+    fetch(`https://artjiya-server.onrender.com/api/contests/results/${contestId}`)
       .then(res => res.json())
       .then(data => {
         setRevealed(data.revealed);

@@ -37,11 +37,11 @@ function Contest() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:5000/auth/me', { credentials: 'include' })
+    fetch('https://artjiya-server.onrender.com/auth/me', { credentials: 'include' })
       .then(res => res.json())
       .then(data => setCurrentUser(data.user));
 
-    fetch('http://localhost:5000/api/contests')
+    fetch('https://artjiya-server.onrender.com/api/contests')
       .then(res => res.json())
       .then(data => {
         setContest(data.contest);
@@ -51,13 +51,13 @@ function Contest() {
 
   useEffect(() => {
     if (!contest || !currentUser) return;
-    fetch(`http://localhost:5000/api/contests/my-submission/${contest.id}`, {
+    fetch(`https://artjiya-server.onrender.com/api/contests/my-submission/${contest.id}`, {
       credentials: 'include'
     })
       .then(res => res.json())
       .then(data => setSubmitted(data.submitted));
 
-    fetch('http://localhost:5000/api/artworks', { credentials: 'include' })
+    fetch('https://artjiya-server.onrender.com/api/artworks', { credentials: 'include' })
       .then(res => res.json())
       .then(data => setUserArtworks(
         data.filter((a: any) => a.user_id === currentUser.id)
@@ -67,7 +67,7 @@ function Contest() {
   const handleSubmit = async () => {
     if (!selectedArtwork || !contest) return;
     setSubmitting(true);
-    const res = await fetch('http://localhost:5000/api/contests/submit', {
+    const res = await fetch('https://artjiya-server.onrender.com/api/contests/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -129,7 +129,7 @@ function Contest() {
               )
             ) : (
               
-              <a  href="http://localhost:5000/auth/google"
+              <a  href="https://artjiya-server.onrender.com/auth/google"
                 className="bg-[#E84393] hover:bg-[#C2185B] text-white px-6 py-2.5 rounded-full text-sm font-semibold transition"
               >
                 Sign in to submit

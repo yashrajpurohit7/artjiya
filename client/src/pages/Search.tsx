@@ -16,7 +16,7 @@ function Search() {
   useEffect(() => {
     if (!query) return;
     setLoading(true);
-    fetch(`http://localhost:5000/api/search?q=${query}`, { credentials: 'include' })
+    fetch(`https://artjiya-server.onrender.com/api/search?q=${query}`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setResults(data);

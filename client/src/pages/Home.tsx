@@ -18,7 +18,7 @@ function Home() {
         </p>
         <div className="flex gap-4">
           
-          <a  href="http://localhost:5000/auth/google"
+          <a  href="https://artjiya-server.onrender.com/auth/google"
             className="bg-[#E84393] hover:bg-[#C2185B] text-white px-8 py-3 rounded-full font-semibold transition"
           >
             Join ARTJIYA

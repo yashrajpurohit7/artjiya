@@ -18,11 +18,11 @@ function Gallery() {
   const [follows, setFollows] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
-    fetch('http://localhost:5000/auth/me', { credentials: 'include' })
+    fetch('https://artjiya-server.onrender.com/auth/me', { credentials: 'include' })
       .then(res => res.json())
       .then(data => setCurrentUser(data.user));
 
-    fetch('http://localhost:5000/api/artworks', { credentials: 'include' })
+    fetch('https://artjiya-server.onrender.com/api/artworks', { credentials: 'include' })
       .then(res => res.json())
       .then(data => setArtworks(data));
   }, []);
@@ -34,7 +34,7 @@ function Gallery() {
     const liked = artwork.liked_by_me;
     const method = liked ? 'DELETE' : 'POST';
 
-    await fetch(`http://localhost:5000/api/likes/${artworkId}`, {
+    await fetch(`https://artjiya-server.onrender.com/api/likes/${artworkId}`, {
       method,
       credentials: 'include',
     });
@@ -50,7 +50,7 @@ function Gallery() {
     if (!currentUser) return alert('Please sign in to follow artists');
     const following = follows[userId];
     const method = following ? 'DELETE' : 'POST';
-    await fetch(`http://localhost:5000/api/follows/${userId}`, {
+    await fetch(`https://artjiya-server.onrender.com/api/follows/${userId}`, {
       method,
       credentials: 'include',
     });

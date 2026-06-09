@@ -16,7 +16,7 @@ function Dashboard() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    fetch('http://localhost:5000/auth/me', { credentials: 'include' })
+    fetch('https://artjiya-server.onrender.com/auth/me', { credentials: 'include' })
       .then(res => res.json())
       .then(data => setUser(data.user))
       .catch(err => console.error(err));
@@ -31,7 +31,7 @@ function Dashboard() {
     formData.append('title', title);
 
     try {
-      const res = await fetch('http://localhost:5000/api/artworks', {
+      const res = await fetch('https://artjiya-server.onrender.com/api/artworks', {
         method: 'POST',
         credentials: 'include',
         body: formData,

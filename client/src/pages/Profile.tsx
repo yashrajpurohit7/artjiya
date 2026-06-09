@@ -28,11 +28,11 @@ function Profile() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:5000/auth/me', { credentials: 'include' })
+    fetch('https://artjiya-server.onrender.com/auth/me', { credentials: 'include' })
       .then(res => res.json())
       .then(data => setCurrentUser(data.user));
 
-    fetch(`http://localhost:5000/api/profile/${id}`)
+    fetch(`https://artjiya-server.onrender.com/api/profile/${id}`)
       .then(res => res.json())
       .then(data => {
         setProfile(data.user);
@@ -47,7 +47,7 @@ function Profile() {
   const toggleFollow = async () => {
     if (!currentUser) return alert('Please sign in to follow artists');
     const method = following ? 'DELETE' : 'POST';
-    await fetch(`http://localhost:5000/api/follows/${id}`, {
+    await fetch(`https://artjiya-server.onrender.com/api/follows/${id}`, {
       method,
       credentials: 'include',
     });
@@ -57,7 +57,7 @@ function Profile() {
 
   const handleSave = async () => {
     setSaving(true);
-    const res = await fetch('http://localhost:5000/api/profile/edit', {
+    const res = await fetch('https://artjiya-server.onrender.com/api/profile/edit', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

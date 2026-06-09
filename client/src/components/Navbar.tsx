@@ -13,13 +13,13 @@ function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('http://localhost:5000/auth/me', { credentials: 'include' })
+    fetch('https://artjiya-server.onrender.com/auth/me', { credentials: 'include' })
       .then(res => res.json())
       .then(data => setUser(data.user));
   }, []);
 
   const handleLogout = () => {
-    fetch('http://localhost:5000/auth/logout', { credentials: 'include' })
+    fetch('https://artjiya-server.onrender.com/auth/logout', { credentials: 'include' })
       .then(() => {
         setUser(null);
         navigate('/');
@@ -96,7 +96,7 @@ function Navbar() {
           </>
         ) : (
           
-            <a href="http://localhost:5000/auth/google"
+            <a href="https://artjiya-server.onrender.com/auth/google"
             className="text-sm bg-[#E84393] hover:bg-[#C2185B] text-white px-4 py-1.5 rounded-full transition"
           >
             Sign in
