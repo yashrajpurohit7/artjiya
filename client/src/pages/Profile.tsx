@@ -164,15 +164,32 @@ function Profile() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {artworks.map(art => (
-              <div key={art.id} className="bg-[#111111] border border-[#222222] rounded-xl overflow-hidden">
-                <img
-                  src={art.image_url}
-                  alt={art.title}
-                  className="w-full aspect-square object-cover"
-                />
-                <p className="text-sm text-white p-3">{art.title}</p>
-              </div>
-            ))}
+  <div key={art.id} className="bg-[#111111] border border-[#222222] rounded-xl overflow-hidden">
+    <img
+      src={art.image_url}
+      alt={art.title}
+      className="w-full aspect-square object-cover"
+    />
+    <div className="p-3 flex items-center justify-between">
+      <p className="text-sm text-white">{art.title}</p>
+      {isOwnProfile && (
+        <button
+          onClick={async () => {
+            if (!confirm('Delete this artwork?')) return;
+            await fetch(`https://artjiya-server.onrender.com/api/artworks/${art.id}`, {
+              method: 'DELETE',
+              credentials: 'include',
+            });
+            setArtworks(prev => prev.filter(a => a.id !== art.id));
+          }}
+          className="text-[#888888] hover:text-red-500 text-xs transition"
+        >
+          Delete
+        </button>
+      )}
+    </div>
+  </div>
+))}
           </div>
         )}
       </div>
