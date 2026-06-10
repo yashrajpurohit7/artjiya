@@ -66,4 +66,35 @@ router.put('/edit', async (req, res) => {
     res.status(500).json({ error: 'Failed to update profile' });
   }
 });
+// Get followers list
+router.get('/:id/followers', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT users.id, users.username, users.avatar_url 
+       FROM follows 
+       JOIN users ON users.id = follows.follower_id
+       WHERE follows.following_id = $1`,
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+// Get following list
+router.get('/:id/following', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT users.id, users.username, users.avatar_url 
+       FROM follows 
+       JOIN users ON users.id = follows.following_id
+       WHERE follows.follower_id = $1`,
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
 export default router;

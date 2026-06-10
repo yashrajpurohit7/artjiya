@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 
 interface User {
   id: number;
@@ -22,10 +22,15 @@ function Profile() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [following, setFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
   const [editing, setEditing] = useState(false);
   const [editUsername, setEditUsername] = useState('');
   const [editBio, setEditBio] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
+  const [followersList, setFollowersList] = useState<any[]>([]);
+  const [followingList, setFollowingList] = useState<any[]>([]);
 
   useEffect(() => {
     fetch('https://artjiya-server.onrender.com/auth/me', { credentials: 'include' })
@@ -42,6 +47,10 @@ function Profile() {
         setEditUsername(data.user.username);
         setEditBio(data.user.bio || '');
       });
+
+    fetch(`https://artjiya-server.onrender.com/api/profile/${id}/following`)
+      .then(res => res.json())
+      .then(data => setFollowingCount(data.length));
   }, [id]);
 
   const toggleFollow = async () => {
@@ -128,9 +137,30 @@ function Profile() {
                 {profile.bio && (
                   <p className="text-[#888888] text-sm mb-2">{profile.bio}</p>
                 )}
-                <p className="text-[#888888] text-sm mb-3">
-                  {followerCount} {followerCount === 1 ? 'follower' : 'followers'}
-                </p>
+                <div className="flex gap-4 mb-3">
+                  <button
+                    onClick={() => {
+                      fetch(`https://artjiya-server.onrender.com/api/profile/${id}/followers`)
+                        .then(res => res.json())
+                        .then(data => setFollowersList(data));
+                      setShowFollowers(true);
+                    }}
+                    className="text-sm text-[#888888] hover:text-white transition"
+                  >
+                    <span className="text-white font-semibold">{followerCount}</span> followers
+                  </button>
+                  <button
+                    onClick={() => {
+                      fetch(`https://artjiya-server.onrender.com/api/profile/${id}/following`)
+                        .then(res => res.json())
+                        .then(data => setFollowingList(data));
+                      setShowFollowing(true);
+                    }}
+                    className="text-sm text-[#888888] hover:text-white transition"
+                  >
+                    <span className="text-white font-semibold">{followingCount}</span> following
+                  </button>
+                </div>
                 {isOwnProfile ? (
                   <button
                     onClick={() => setEditing(true)}
@@ -164,35 +194,89 @@ function Profile() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {artworks.map(art => (
-  <div key={art.id} className="bg-[#111111] border border-[#222222] rounded-xl overflow-hidden">
-    <img
-      src={art.image_url}
-      alt={art.title}
-      className="w-full aspect-square object-cover"
-    />
-    <div className="p-3 flex items-center justify-between">
-      <p className="text-sm text-white">{art.title}</p>
-      {isOwnProfile && (
-        <button
-          onClick={async () => {
-            if (!confirm('Delete this artwork?')) return;
-            await fetch(`https://artjiya-server.onrender.com/api/artworks/${art.id}`, {
-              method: 'DELETE',
-              credentials: 'include',
-            });
-            setArtworks(prev => prev.filter(a => a.id !== art.id));
-          }}
-          className="text-[#888888] hover:text-red-500 text-xs transition"
-        >
-          Delete
-        </button>
-      )}
-    </div>
-  </div>
-))}
+              <div key={art.id} className="bg-[#111111] border border-[#222222] rounded-xl overflow-hidden">
+                <img
+                  src={art.image_url}
+                  alt={art.title}
+                  className="w-full aspect-square object-cover"
+                />
+                <div className="p-3 flex items-center justify-between">
+                  <p className="text-sm text-white">{art.title}</p>
+                  {isOwnProfile && (
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Delete this artwork?')) return;
+                        await fetch(`https://artjiya-server.onrender.com/api/artworks/${art.id}`, {
+                          method: 'DELETE',
+                          credentials: 'include',
+                        });
+                        setArtworks(prev => prev.filter(a => a.id !== art.id));
+                      }}
+                      className="text-[#888888] hover:text-red-500 text-xs transition"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
+
+      {/* Followers modal */}
+      {showFollowers && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 px-6">
+          <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 w-full max-w-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">Followers</h3>
+              <button onClick={() => setShowFollowers(false)} className="text-[#888888] hover:text-white">✕</button>
+            </div>
+            {followersList.length === 0 ? (
+              <p className="text-[#888888] text-sm">No followers yet.</p>
+            ) : (
+              followersList.map(user => (
+                <Link
+                  key={user.id}
+                  to={`/profile/${user.id}`}
+                  onClick={() => setShowFollowers(false)}
+                  className="flex items-center gap-3 py-2 hover:opacity-80 transition"
+                >
+                  <img src={user.avatar_url} className="w-8 h-8 rounded-full" />
+                  <span className="text-sm text-white">{user.username}</span>
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Following modal */}
+      {showFollowing && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 px-6">
+          <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 w-full max-w-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">Following</h3>
+              <button onClick={() => setShowFollowing(false)} className="text-[#888888] hover:text-white">✕</button>
+            </div>
+            {followingList.length === 0 ? (
+              <p className="text-[#888888] text-sm">Not following anyone yet.</p>
+            ) : (
+              followingList.map(user => (
+                <Link
+                  key={user.id}
+                  to={`/profile/${user.id}`}
+                  onClick={() => setShowFollowing(false)}
+                  className="flex items-center gap-3 py-2 hover:opacity-80 transition"
+                >
+                  <img src={user.avatar_url} className="w-8 h-8 rounded-full" />
+                  <span className="text-sm text-white">{user.username}</span>
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
