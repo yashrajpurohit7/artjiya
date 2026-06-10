@@ -46,5 +46,19 @@ router.delete('/:artworkId', async (req, res) => {
     res.status(500).json({ error: 'Failed' });
   }
 });
-
+// Get likes for an artwork
+router.get('/:artworkId', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT users.id, users.username, users.avatar_url
+       FROM likes
+       JOIN users ON users.id = likes.user_id
+       WHERE likes.artwork_id = $1`,
+      [req.params.artworkId]
+    );
+    res.json(result.rows);
+  } catch {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
 export default router;

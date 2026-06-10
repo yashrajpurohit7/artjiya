@@ -16,6 +16,8 @@ function Gallery() {
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [follows, setFollows] = useState<Record<number, boolean>>({});
+  const [showLikedBy, setShowLikedBy] = useState<number | null>(null);
+  const [likedByList, setLikedByList] = useState<any[]>([]);
 
   useEffect(() => {
     fetch('https://artjiya-server.onrender.com/auth/me', { credentials: 'include' })
@@ -100,20 +102,64 @@ function Gallery() {
                   )}
                 </div>
 
-                <button
-                  onClick={() => toggleLike(art.id)}
-                  className="mt-3 flex items-center gap-1.5 text-sm transition"
-                >
-                  <span className={art.liked_by_me ? 'text-[#E84393]' : 'text-[#888888] hover:text-[#E84393]'}>
-                    {art.liked_by_me ? '♥' : '♡'}
-                  </span>
-                  <span className={art.liked_by_me ? 'text-[#E84393]' : 'text-[#888888]'}>
-                    {art.like_count} {art.like_count === 1 ? 'like' : 'likes'}
-                  </span>
-                </button>
+                <div className="mt-3 flex items-center gap-3">
+                  <button
+                    onClick={() => toggleLike(art.id)}
+                    className="flex items-center gap-1.5 text-sm transition"
+                  >
+                    <span className={art.liked_by_me ? 'text-[#E84393]' : 'text-[#888888] hover:text-[#E84393]'}>
+                      {art.liked_by_me ? '♥' : '♡'}
+                    </span>
+                    <span className={art.liked_by_me ? 'text-[#E84393]' : 'text-[#888888]'}>
+                      {art.like_count} {art.like_count === 1 ? 'like' : 'likes'}
+                    </span>
+                  </button>
+                  {art.like_count > 0 && (
+                    <button
+                      onClick={() => {
+                        fetch(`https://artjiya-server.onrender.com/api/likes/${art.id}`)
+                          .then(res => res.json())
+                          .then(data => {
+                            setLikedByList(data);
+                            setShowLikedBy(art.id);
+                          });
+                      }}
+                      className="text-xs text-[#888888] hover:text-white transition"
+                    >
+                      See who liked
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Liked by modal */}
+      {showLikedBy && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 px-6">
+          <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 w-full max-w-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">Liked by</h3>
+              <button onClick={() => setShowLikedBy(null)} className="text-[#888888] hover:text-white">✕</button>
+            </div>
+            {likedByList.length === 0 ? (
+              <p className="text-[#888888] text-sm">No likes yet.</p>
+            ) : (
+              likedByList.map(user => (
+                <Link
+                  key={user.id}
+                  to={`/profile/${user.id}`}
+                  onClick={() => setShowLikedBy(null)}
+                  className="flex items-center gap-3 py-2 hover:opacity-80 transition"
+                >
+                  <img src={user.avatar_url} className="w-8 h-8 rounded-full" />
+                  <span className="text-sm text-white">{user.username}</span>
+                </Link>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>
