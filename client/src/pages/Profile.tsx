@@ -6,6 +6,7 @@ interface User {
   username: string;
   avatar_url: string;
   bio: string;
+  rating: number;
   created_at: string;
 }
 
@@ -134,6 +135,11 @@ function Profile() {
             ) : (
               <>
                 <h1 className="text-2xl font-bold mb-1">{profile.username}</h1>
+                <div className="flex items-center gap-2 mb-1">
+  <span className="text-xs bg-[#E8439322] border border-[#E84393] text-[#E84393] px-2 py-0.5 rounded-full">
+    ⭐ {profile.rating} pts
+  </span>
+</div>
                 {profile.bio && (
                   <p className="text-[#888888] text-sm mb-2">{profile.bio}</p>
                 )}
