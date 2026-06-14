@@ -40,7 +40,16 @@ app.get('/auth/google/callback',
       JWT_SECRET,
       { expiresIn: '7d' }
     );
-    res.redirect(`${CLIENT_URL}/auth/callback?token=${token}`);
+    res.send(`
+      <html>
+        <body>
+          <script>
+            localStorage.setItem('artjiya_token', '${token}');
+            window.location.href = '${CLIENT_URL}';
+          </script>
+        </body>
+      </html>
+    `);
   }
 );
 
