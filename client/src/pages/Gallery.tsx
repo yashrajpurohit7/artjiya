@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { authHeaders, getToken } from '../utils/auth';
 
 interface Artwork {
   id: number;
@@ -20,11 +21,17 @@ function Gallery() {
   const [likedByList, setLikedByList] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('https://artjiya-server.onrender.com/auth/me', { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => setCurrentUser(data.user));
+    if (getToken()) {
+      fetch('https://artjiya-server.onrender.com/auth/me', {
+        headers: authHeaders(),
+      })
+        .then(res => res.json())
+        .then(data => setCurrentUser(data.user));
+    }
 
-    fetch('https://artjiya-server.onrender.com/api/artworks', { credentials: 'include' })
+    fetch('https://artjiya-server.onrender.com/api/artworks', {
+      headers: authHeaders(),
+    })
       .then(res => res.json())
       .then(data => setArtworks(data));
   }, []);
@@ -38,7 +45,7 @@ function Gallery() {
 
     await fetch(`https://artjiya-server.onrender.com/api/likes/${artworkId}`, {
       method,
-      credentials: 'include',
+      headers: authHeaders(),
     });
 
     setArtworks(prev => prev.map(a =>
@@ -54,7 +61,7 @@ function Gallery() {
     const method = following ? 'DELETE' : 'POST';
     await fetch(`https://artjiya-server.onrender.com/api/follows/${userId}`, {
       method,
-      credentials: 'include',
+      headers: authHeaders(),
     });
     setFollows(prev => ({ ...prev, [userId]: !following }));
   };
@@ -136,7 +143,6 @@ function Gallery() {
         </div>
       )}
 
-      {/* Liked by modal */}
       {showLikedBy && (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 px-6">
           <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 w-full max-w-sm">

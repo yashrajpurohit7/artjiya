@@ -1,12 +1,21 @@
 import { Router, Request, Response } from 'express';
 import pool from '../db';
 import { upload, uploadToCloudinary } from '../upload';
+import { authenticateToken } from '../index';
 
 const router = Router();
 
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const currentUserId = (req.user as any)?.id || null;
+    const authHeader = req.headers.authorization;
+    let currentUserId = null;
+    if (authHeader) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded: any = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET!);
+        currentUserId = decoded.id;
+      } catch {}
+    }
 
     const result = await pool.query(
       `SELECT 
@@ -28,28 +37,56 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/', upload.single('image'), async (req: Request, res: Response) => {
+router.post('/', authenticateToken, upload.single('image'), async (req: any, res: Response) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Not logged in' });
     if (!req.file) return res.status(400).json({ error: 'No image provided' });
-
     const { title } = req.body;
-    const user = req.user as any;
 
     const imageUrl = await uploadToCloudinary(req.file.buffer);
 
     const result = await pool.query(
       'INSERT INTO artworks (user_id, title, image_url) VALUES ($1, $2, $3) RETURNING *',
-      [user.id, title, imageUrl]
+      [req.user.id, title, imageUrl]
     );
-// +10 rating for uploading artwork
-await pool.query(
-  'UPDATE users SET rating = rating + 10 WHERE id = $1',
-  [user.id]
-);
+
+    await pool.query(
+      'UPDATE users SET rating = rating + 10 WHERE id = $1',
+      [req.user.id]
+    );
+
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: 'Failed to upload artwork' });
+  }
+});
+
+router.delete('/:id', authenticateToken, async (req: any, res: Response) => {
+  try {
+    const artwork = await pool.query(
+      'SELECT * FROM artworks WHERE id = $1',
+      [req.params.id]
+    );
+
+    if (artwork.rows.length === 0) {
+      return res.status(404).json({ error: 'Artwork not found' });
+    }
+
+    if (artwork.rows[0].user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Not your artwork' });
+    }
+
+    await pool.query('DELETE FROM likes WHERE artwork_id = $1', [req.params.id]);
+    await pool.query('DELETE FROM contest_submissions WHERE artwork_id = $1', [req.params.id]);
+    await pool.query('DELETE FROM artworks WHERE id = $1', [req.params.id]);
+
+    await pool.query(
+      'UPDATE users SET rating = GREATEST(rating - 10, 0) WHERE id = $1',
+      [req.user.id]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete artwork' });
   }
 });
 

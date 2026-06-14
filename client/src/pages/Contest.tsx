@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { authHeaders, getToken } from '../utils/auth';
 
 interface Contest {
   id: number;
@@ -37,9 +38,13 @@ function Contest() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch('https://artjiya-server.onrender.com/auth/me', { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => setCurrentUser(data.user));
+    if (getToken()) {
+      fetch('https://artjiya-server.onrender.com/auth/me', {
+        headers: authHeaders(),
+      })
+        .then(res => res.json())
+        .then(data => setCurrentUser(data.user));
+    }
 
     fetch('https://artjiya-server.onrender.com/api/contests')
       .then(res => res.json())
@@ -52,12 +57,14 @@ function Contest() {
   useEffect(() => {
     if (!contest || !currentUser) return;
     fetch(`https://artjiya-server.onrender.com/api/contests/my-submission/${contest.id}`, {
-      credentials: 'include'
+      headers: authHeaders(),
     })
       .then(res => res.json())
       .then(data => setSubmitted(data.submitted));
 
-    fetch('https://artjiya-server.onrender.com/api/artworks', { credentials: 'include' })
+    fetch('https://artjiya-server.onrender.com/api/artworks', {
+      headers: authHeaders(),
+    })
       .then(res => res.json())
       .then(data => setUserArtworks(
         data.filter((a: any) => a.user_id === currentUser.id)
@@ -69,8 +76,7 @@ function Contest() {
     setSubmitting(true);
     const res = await fetch('https://artjiya-server.onrender.com/api/contests/submit', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contest_id: contest.id,
         artwork_id: selectedArtwork,
@@ -96,20 +102,15 @@ function Contest() {
     <div className="min-h-screen bg-[#0a0a0a] text-white px-6 py-10">
       <div className="max-w-3xl mx-auto">
 
-        {/* Active contest banner */}
         {contest ? (
           <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 mb-8">
             <div className="flex items-center gap-3 mb-4">
               <span className="bg-[#E8439322] border border-[#E84393] text-[#E84393] text-xs px-3 py-1 rounded-full">
                 Live now
               </span>
-              <span className="text-[#888888] text-sm">
-                {getTimeLeft(contest.end_date)}
-              </span>
+              <span className="text-[#888888] text-sm">{getTimeLeft(contest.end_date)}</span>
             </div>
-            <p className="text-[#888888] text-xs tracking-widest uppercase mb-1">
-              Theme
-            </p>
+            <p className="text-[#888888] text-xs tracking-widest uppercase mb-1">Theme</p>
             <h1 className="text-3xl font-bold mb-3">{contest.theme}</h1>
             <p className="text-[#888888] text-sm mb-6">{contest.title}</p>
 
@@ -146,18 +147,15 @@ function Contest() {
               </div>
             </div>
           </div>
-         ) : (
+        ) : (
           <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 mb-8">
             <p className="text-[#888888] text-sm mb-4">No active contest right now. Check back soon.</p>
-            <Link
-              to="/contest/results/1"
-              className="text-sm text-[#E84393] underline"
-            >
+            <Link to="/contest/results/1" className="text-sm text-[#E84393] underline">
               View last contest results →
             </Link>
           </div>
         )}
-        {/* Leaderboard */}
+
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">All-time ratings</h2>
           <span className="text-[#888888] text-xs">Updated after each contest</span>
@@ -173,7 +171,7 @@ function Contest() {
           </div>
 
           {leaderboard.length === 0 ? (
-            <p className="text-[#888888] text-sm text-center py-8">No ratings yet. Start uploading!</p>
+            <p className="text-[#888888] text-sm text-center py-8">No ratings yet.</p>
           ) : (
             leaderboard.map((user, index) => (
               <div
@@ -202,7 +200,6 @@ function Contest() {
           )}
         </div>
 
-        {/* Rating formula */}
         <div className="bg-[#111111] border border-[#222222] rounded-xl px-4 py-3">
           <p className="text-[#888888] text-xs mb-2">How ratings are calculated</p>
           <div className="flex flex-wrap gap-4">
@@ -220,7 +217,6 @@ function Contest() {
           </div>
         </div>
 
-        {/* Submit modal */}
         {showSubmitModal && (
           <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 px-6">
             <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 w-full max-w-md">
@@ -263,7 +259,6 @@ function Contest() {
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

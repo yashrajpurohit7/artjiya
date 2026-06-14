@@ -6,13 +6,12 @@ passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID!,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
   callbackURL: process.env.CALLBACK_URL || 'http://localhost:5000/auth/google/callback',
-}, async (accessToken, refreshToken, profile, done) => {
+}, async (accessToken: any, refreshToken: any, profile: any, done: any) => {
   try {
     const googleId = profile.id;
     const username = profile.displayName;
     const avatarUrl = profile.photos?.[0]?.value || '';
 
-    // Check if user exists
     const existing = await pool.query(
       'SELECT * FROM users WHERE google_id = $1',
       [googleId]
@@ -22,7 +21,6 @@ passport.use(new GoogleStrategy({
       return done(null, existing.rows[0]);
     }
 
-    // Create new user
     const newUser = await pool.query(
       'INSERT INTO users (google_id, username, avatar_url) VALUES ($1, $2, $3) RETURNING *',
       [googleId, username, avatarUrl]

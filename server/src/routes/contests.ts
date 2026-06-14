@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import pool from '../db';
+import { authenticateToken } from '../index';
 
 const router = Router();
 
-// Get active contest + leaderboard
 router.get('/', async (req, res) => {
   try {
     const contestResult = await pool.query(
@@ -36,40 +36,30 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Submit artwork to contest
-router.post('/submit', async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
-  const user = req.user as any;
+router.post('/submit', authenticateToken, async (req: any, res) => {
   const { contest_id, artwork_id } = req.body;
-
   try {
     await pool.query(
       `INSERT INTO contest_submissions (contest_id, user_id, artwork_id) 
        VALUES ($1, $2, $3)`,
-      [contest_id, user.id, artwork_id]
+      [contest_id, req.user.id, artwork_id]
     );
-
     await pool.query(
       `UPDATE users SET rating = rating + 15 WHERE id = $1`,
-      [user.id]
+      [req.user.id]
     );
-
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Already submitted or failed' });
   }
 });
 
-// Check if user already submitted
-router.get('/my-submission/:contestId', async (req, res) => {
-  if (!req.user) return res.json({ submitted: false });
-  const user = req.user as any;
-
+router.get('/my-submission/:contestId', authenticateToken, async (req: any, res) => {
   try {
     const result = await pool.query(
       `SELECT * FROM contest_submissions 
        WHERE contest_id = $1 AND user_id = $2`,
-      [req.params.contestId, user.id]
+      [req.params.contestId, req.user.id]
     );
     res.json({ submitted: result.rows.length > 0 });
   } catch {
@@ -77,64 +67,26 @@ router.get('/my-submission/:contestId', async (req, res) => {
   }
 });
 
-// Admin only — create new contest
-router.post('/', async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
-  const user = req.user as any;
-
-  if (user.id !== parseInt(process.env.ADMIN_USER_ID!)) {
+router.post('/announce/:contestId', authenticateToken, async (req: any, res) => {
+  if (req.user.id !== parseInt(process.env.ADMIN_USER_ID!)) {
     return res.status(403).json({ error: 'Not authorized' });
   }
-
-  const { title, theme, start_date, end_date, result_date } = req.body;
-
-  try {
-    await pool.query(
-      `UPDATE contests SET status = 'ended' WHERE status = 'active'`
-    );
-
-    const result = await pool.query(
-      `INSERT INTO contests (title, theme, start_date, end_date, result_date, status)
-       VALUES ($1, $2, $3, $4, $5, 'active') RETURNING *`,
-      [title, theme, start_date, end_date, result_date]
-    );
-
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to create contest' });
-  }
-});
-// Admin only — announce winner + reveal submissions
-router.post('/announce/:contestId', async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
-  const user = req.user as any;
-
-  if (user.id !== parseInt(process.env.ADMIN_USER_ID!)) {
-    return res.status(403).json({ error: 'Not authorized' });
-  }
-
   const { winner_user_id } = req.body;
-
   try {
-    // End the contest
     await pool.query(
       `UPDATE contests SET status = 'ended' WHERE id = $1`,
       [req.params.contestId]
     );
-
-    // +50 rating for winner
     await pool.query(
       `UPDATE users SET rating = rating + 50 WHERE id = $1`,
       [winner_user_id]
     );
-
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to announce winner' });
   }
 });
 
-// Get ended contest results
 router.get('/results/:contestId', async (req, res) => {
   try {
     const contestResult = await pool.query(
@@ -175,4 +127,25 @@ router.get('/results/:contestId', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch results' });
   }
 });
+
+router.post('/', authenticateToken, async (req: any, res) => {
+  if (req.user.id !== parseInt(process.env.ADMIN_USER_ID!)) {
+    return res.status(403).json({ error: 'Not authorized' });
+  }
+  const { title, theme, start_date, end_date, result_date } = req.body;
+  try {
+    await pool.query(
+      `UPDATE contests SET status = 'ended' WHERE status = 'active'`
+    );
+    const result = await pool.query(
+      `INSERT INTO contests (title, theme, start_date, end_date, result_date, status)
+       VALUES ($1, $2, $3, $4, $5, 'active') RETURNING *`,
+      [title, theme, start_date, end_date, result_date]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create contest' });
+  }
+});
+
 export default router;

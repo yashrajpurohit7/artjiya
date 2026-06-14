@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { getToken, removeToken, authHeaders } from '../utils/auth';
 
 interface User {
   id: number;
@@ -13,17 +14,19 @@ function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('https://artjiya-server.onrender.com/auth/me', { credentials: 'include' })
+    const token = getToken();
+    if (!token) return;
+    fetch('https://artjiya-server.onrender.com/auth/me', {
+      headers: authHeaders(),
+    })
       .then(res => res.json())
       .then(data => setUser(data.user));
   }, []);
 
   const handleLogout = () => {
-    fetch('https://artjiya-server.onrender.com/auth/logout', { credentials: 'include' })
-      .then(() => {
-        setUser(null);
-        navigate('/');
-      });
+    removeToken();
+    setUser(null);
+    navigate('/');
   };
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -96,7 +99,7 @@ function Navbar() {
           </>
         ) : (
           
-            <a href="https://artjiya-server.onrender.com/auth/google"
+           <a href="https://artjiya-server.onrender.com/auth/google"
             className="text-sm bg-[#E84393] hover:bg-[#C2185B] text-white px-4 py-1.5 rounded-full transition"
           >
             Sign in

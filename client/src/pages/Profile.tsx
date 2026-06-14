@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { authHeaders, getToken } from '../utils/auth';
 
 interface User {
   id: number;
@@ -34,11 +35,17 @@ function Profile() {
   const [followingList, setFollowingList] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('https://artjiya-server.onrender.com/auth/me', { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => setCurrentUser(data.user));
+    if (getToken()) {
+      fetch('https://artjiya-server.onrender.com/auth/me', {
+        headers: authHeaders(),
+      })
+        .then(res => res.json())
+        .then(data => setCurrentUser(data.user));
+    }
 
-    fetch(`https://artjiya-server.onrender.com/api/profile/${id}`)
+    fetch(`https://artjiya-server.onrender.com/api/profile/${id}`, {
+      headers: authHeaders(),
+    })
       .then(res => res.json())
       .then(data => {
         setProfile(data.user);
@@ -59,7 +66,7 @@ function Profile() {
     const method = following ? 'DELETE' : 'POST';
     await fetch(`https://artjiya-server.onrender.com/api/follows/${id}`, {
       method,
-      credentials: 'include',
+      headers: authHeaders(),
     });
     setFollowing(!following);
     setFollowerCount(prev => following ? prev - 1 : prev + 1);
@@ -69,8 +76,7 @@ function Profile() {
     setSaving(true);
     const res = await fetch('https://artjiya-server.onrender.com/api/profile/edit', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: editUsername, bio: editBio }),
     });
     const data = await res.json();
@@ -92,8 +98,6 @@ function Profile() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white px-6 py-10">
       <div className="max-w-3xl mx-auto">
-
-        {/* Profile header */}
         <div className="flex items-start gap-6 mb-10">
           <img
             src={profile.avatar_url}
@@ -135,11 +139,11 @@ function Profile() {
             ) : (
               <>
                 <h1 className="text-2xl font-bold mb-1">{profile.username}</h1>
-                <div className="flex items-center gap-2 mb-1">
-  <span className="text-xs bg-[#E8439322] border border-[#E84393] text-[#E84393] px-2 py-0.5 rounded-full">
-    ⭐ {profile.rating} pts
-  </span>
-</div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs bg-[#E8439322] border border-[#E84393] text-[#E84393] px-2 py-0.5 rounded-full">
+                    ⭐ {profile.rating} pts
+                  </span>
+                </div>
                 {profile.bio && (
                   <p className="text-[#888888] text-sm mb-2">{profile.bio}</p>
                 )}
@@ -193,7 +197,6 @@ function Profile() {
           </div>
         </div>
 
-        {/* Artworks grid */}
         <h2 className="text-lg font-semibold mb-4">Artworks</h2>
         {artworks.length === 0 ? (
           <p className="text-[#888888]">No artworks uploaded yet.</p>
@@ -214,7 +217,7 @@ function Profile() {
                         if (!confirm('Delete this artwork?')) return;
                         await fetch(`https://artjiya-server.onrender.com/api/artworks/${art.id}`, {
                           method: 'DELETE',
-                          credentials: 'include',
+                          headers: authHeaders(),
                         });
                         setArtworks(prev => prev.filter(a => a.id !== art.id));
                       }}
@@ -230,7 +233,6 @@ function Profile() {
         )}
       </div>
 
-      {/* Followers modal */}
       {showFollowers && (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 px-6">
           <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 w-full max-w-sm">
@@ -257,7 +259,6 @@ function Profile() {
         </div>
       )}
 
-      {/* Following modal */}
       {showFollowing && (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 px-6">
           <div className="bg-[#111111] border border-[#222222] rounded-2xl p-6 w-full max-w-sm">

@@ -1,15 +1,24 @@
 import { Router } from 'express';
 import pool from '../db';
+import { authenticateToken } from '../index';
 
 const router = Router();
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: any, res) => {
   try {
     const { id } = req.params;
-    const currentUserId = (req.user as any)?.id;
+    const authHeader = req.headers.authorization;
+    let currentUserId = null;
+    if (authHeader) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded: any = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET!);
+        currentUserId = decoded.id;
+      } catch {}
+    }
 
     const userResult = await pool.query(
-      'SELECT id, username, avatar_url, bio, created_at FROM users WHERE id = $1',
+      'SELECT id, username, avatar_url, bio, rating, created_at FROM users WHERE id = $1',
       [id]
     );
 
@@ -46,27 +55,7 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
-// Update profile
-router.put('/edit', async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Not logged in' });
-  const user = req.user as any;
-  const { username, bio } = req.body;
 
-  if (!username || username.trim().length < 2) {
-    return res.status(400).json({ error: 'Username too short' });
-  }
-
-  try {
-    const result = await pool.query(
-      `UPDATE users SET username = $1, bio = $2 WHERE id = $3 RETURNING *`,
-      [username.trim(), bio?.trim() || '', user.id]
-    );
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to update profile' });
-  }
-});
-// Get followers list
 router.get('/:id/followers', async (req, res) => {
   try {
     const result = await pool.query(
@@ -82,7 +71,6 @@ router.get('/:id/followers', async (req, res) => {
   }
 });
 
-// Get following list
 router.get('/:id/following', async (req, res) => {
   try {
     const result = await pool.query(
@@ -97,4 +85,21 @@ router.get('/:id/following', async (req, res) => {
     res.status(500).json({ error: 'Failed' });
   }
 });
+
+router.put('/edit', authenticateToken, async (req: any, res) => {
+  const { username, bio } = req.body;
+  if (!username || username.trim().length < 2) {
+    return res.status(400).json({ error: 'Username too short' });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE users SET username = $1, bio = $2 WHERE id = $3 RETURNING *`,
+      [username.trim(), bio?.trim() || '', req.user.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
 export default router;
