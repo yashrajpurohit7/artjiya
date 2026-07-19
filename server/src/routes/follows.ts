@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import pool from '../db';
-import { authenticateToken } from '../index';
-
+import { authenticateToken } from '../middleware/auth';
 const router = Router();
 
 router.post('/:userId', authenticateToken, async (req: any, res) => {

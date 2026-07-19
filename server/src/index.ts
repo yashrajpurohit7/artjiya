@@ -1,4 +1,4 @@
-import express from 'express';
+ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
@@ -27,7 +27,6 @@ app.use(express.json());
 
 app.use(passport.initialize());
 
-// Auth routes
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['profile'], session: false })
 );
@@ -72,19 +71,6 @@ app.get('/auth/failed', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
-
-// Middleware to verify JWT for protected routes
-export const authenticateToken = (req: any, res: any, next: any) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: 'Not logged in' });
-  const token = authHeader.split(' ')[1];
-  try {
-    req.user = jwt.verify(token, JWT_SECRET);
-    next();
-  } catch {
-    res.status(401).json({ error: 'Invalid token' });
-  }
-};
 
 app.use('/api/artworks', artworksRouter);
 app.use('/api/likes', likesRouter);
