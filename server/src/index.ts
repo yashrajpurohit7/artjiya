@@ -1,4 +1,4 @@
- import express from 'express';
+import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
@@ -34,21 +34,26 @@ app.get('/auth/google',
 app.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/auth/failed', session: false }),
   (req: any, res) => {
-    const token = jwt.sign(
-      { id: req.user.id, username: req.user.username, avatar_url: req.user.avatar_url },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    res.send(`
-      <html>
-        <body>
-          <script>
-            localStorage.setItem('artjiya_token', '${token}');
-            window.location.href = '${CLIENT_URL}';
-          </script>
-        </body>
-      </html>
-    `);
+    try {
+      const token = jwt.sign(
+        { id: req.user.id, username: req.user.username, avatar_url: req.user.avatar_url },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+      res.send(`
+        <html>
+          <body>
+            <script>
+              localStorage.setItem('artjiya_token', '${token}');
+              window.location.href = '${CLIENT_URL}';
+            </script>
+          </body>
+        </html>
+      `);
+    } catch (err) {
+      console.error('Callback error:', err);
+      res.status(500).send('Auth failed: ' + String(err));
+    }
   }
 );
 
